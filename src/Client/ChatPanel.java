@@ -34,4 +34,5 @@ public class ChatPanel extends JPanel {
 		setVisible(true);
 		
 	}
+	
 }

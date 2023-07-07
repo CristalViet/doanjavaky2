@@ -11,6 +11,7 @@ import java.net.Socket;
 
 import javax.swing.JOptionPane;
 
+import Server.Account;
 import Server.Client;
 import Server.ClientHandler;
 import Server.ServerPanel;
@@ -22,10 +23,10 @@ public class SockerHandler extends Thread {
 	public Socket Server;
 	public BufferedWriter sender;
 	public BufferedReader receiver;
-	public String avatarLink;
-	public String description;
+	public String avatarLink="";
+	public String description="";
 	Thread receiveAndProcessThread;
-	
+
 	public SockerHandler(String userName, String password, int port) throws IOException {
 		super();
 		Server = new Socket("localhost", port);
@@ -62,7 +63,12 @@ public class SockerHandler extends Thread {
 				sender.newLine();
 				sender.write(password);
 				sender.newLine();
+				sender.write(avatarLink);
+				sender.newLine();
+				sender.write(description);
+				sender.newLine();
 				sender.flush();
+				
 				Result=receiver.readLine();
 				System.out.println("gui ch");
 			}
@@ -72,7 +78,7 @@ public class SockerHandler extends Thread {
 		
 					
 			
-					
+				
 				 if(Result.equals("login success")) {
 					 receiveAndProcessThread=new Thread(()->{
 						  ClientChat clientChat=new ClientChat(userName,sender);
@@ -85,14 +91,34 @@ public class SockerHandler extends Thread {
 									throw new IOException();
 								switch (header) {
 								case "new user online": {
+									// Thêm acc của người mới đăng nhập
+									String username=receiver.readLine();
+									String avatarLink=receiver.readLine();
+									String des=receiver.readLine();
+									System.out.println("Add ne"+username);
+									ClientChat.UserOnlinePanel_members.add(new Account_Client_side(username, avatarLink, des));
+									ClientChat.UpdateOnlineUserList();
 									
-									clientChat.UpdateOnlineUserList();
+									clientChat.printOnlineUserList();
+									break;
+								}
+								case "load user before":{
+									String username=receiver.readLine();
+									String avatarLink=receiver.readLine();
+									String des=receiver.readLine();
 									
+									ClientChat.UserOnlinePanel_members.add(new Account_Client_side(username, avatarLink, des));
+									ClientChat.UpdateOnlineUserList();
 									
+									clientChat.printOnlineUserList();
+									
+								}
+								case "load UI":{
+									clientChat.reloadUI_online();
 									break;
 								}
 								case "exist login":{
-									
+									break;
 								}
 								case "kill": {
 									
@@ -102,6 +128,10 @@ public class SockerHandler extends Thread {
 									sender.flush();
 									receiveAndProcessThread.stop();
 									
+									
+									break;
+								}
+								case "user quit":{
 									
 									break;
 								}
@@ -117,18 +147,11 @@ public class SockerHandler extends Thread {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-						
+							 
 						  }						  
 					 	});
 					 receiveAndProcessThread.start();
-					 if (receiveAndProcessThread.isAlive()) {
-						 	sender.write("user exit");
-							sender.newLine();
-							sender.write(userName);
-							sender.newLine();
-							sender.flush();
-							System.out.println("Đã thoát");
-					}
+					  
 			    	 
 			    	   
 			    	   

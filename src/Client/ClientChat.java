@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -17,13 +18,18 @@ import Server.Client;
 import Server.ClientHandler;
 import Server.ServerPanel;
 import net.miginfocom.swing.MigLayout;
+import testJlist.myobject;
+import testJlist.mypanel;
 
 import javax.swing.JScrollPane;
 import javax.swing.JList;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListModel;
 import javax.swing.DefaultListModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JTextField;
 import javax.swing.JTextArea;
@@ -31,21 +37,25 @@ import javax.swing.JTextArea;
 import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.LayoutManager;
 import java.awt.Panel;
 import java.awt.FlowLayout;
 import javax.swing.BoxLayout;
 import java.awt.CardLayout;
+import java.awt.Component;
 
 public class ClientChat extends JFrame implements  ActionListener {
 
 	private JPanel contentPane;
-	 
-	 List<Account>UserOnlinePanel_members;
+	private   JList<Account_Client_side> list2=new JList<Account_Client_side>();
+	
+	public static List<Account_Client_side>UserOnlinePanel_members=new ArrayList<>();
 	JButton Send_btn;
 	public static JTextPane textPane_display;
+	public  JPanel panel_contain_online_user=new JPanel();
 	JTextArea textArea_message;
-	 String userName;
+	 static String userName;
 	/**
 	 * Launch the application.
 	 */
@@ -56,7 +66,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 	 */
 	public ClientChat(String userName,BufferedWriter sender) {
 		this.userName=userName;
-		System.out.println("So luong account:");	
+		
 		setTitle(userName);
 		setBounds(100, 100, 900, 585);
 		contentPane = new JPanel();
@@ -66,15 +76,15 @@ public class ClientChat extends JFrame implements  ActionListener {
 		contentPane.setLayout(null);
 		
 		JLabel lblNewLabel = new JLabel("User Online List");
-		lblNewLabel.setBounds(10, 10, 95, 13);
+		lblNewLabel.setBounds(20, 40, 95, 13);
 		contentPane.add(lblNewLabel);
 		
 		JLabel lblNewLabel_1 = new JLabel("Chat");
-		lblNewLabel_1.setBounds(146, 33, 131, 26);
+		lblNewLabel_1.setBounds(437, 33, 131, 26);
 		contentPane.add(lblNewLabel_1);
 		
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(146, 64, 273, 255);
+		scrollPane_1.setBounds(549, 228, 273, 255);
 		contentPane.add(scrollPane_1);
 		
 		textPane_display = new JTextPane();
@@ -86,57 +96,52 @@ public class ClientChat extends JFrame implements  ActionListener {
 				SendText(sender);
 			}
 		});
-		Send_btn.setBounds(440, 332, 69, 23);
+		Send_btn.setBounds(486, 439, 69, 23);
 		contentPane.add(Send_btn);
-		
-		JScrollPane scrollPane_2 = new JScrollPane();
-		scrollPane_2.setBounds(594, 33, 69, 337);
-		contentPane.add(scrollPane_2);
-		
-		JPanel panel = new JPanel();
-		scrollPane_2.setViewportView(panel);
 		
 		
 		
 		JLabel lblNewLabel_2 = new JLabel("Room Chat");
-		lblNewLabel_2.setBounds(594, 9, 58, 14);
+		lblNewLabel_2.setBounds(20, 356, 95, 14);
 		contentPane.add(lblNewLabel_2);
 		
 		JScrollPane scrollPane_3 = new JScrollPane();
-		scrollPane_3.setBounds(156, 329, 263, 52);
+		scrollPane_3.setBounds(146, 363, 263, 52);
 		contentPane.add(scrollPane_3);
 		
 		textArea_message = new JTextArea();
 		scrollPane_3.setViewportView(textArea_message);
 		
+//		for(int i=0;i<10;i++) {
+//			
+//		}
+		String ten="Việt";
+		JPanel panel_contain_chat_view = new JPanel();
+		panel_contain_chat_view.setBounds(378, 67, 371, 253);
+		contentPane.add(panel_contain_chat_view);
 		
+		JScrollPane scrollPane_4 = new JScrollPane();
+		scrollPane_4.setBounds(20, 373, 95, 167);
+		contentPane.add(scrollPane_4);
 		
+		JList list_room = new JList();
+		scrollPane_4.setViewportView(list_room);
 		
+		panel_contain_online_user = new JPanel(new BorderLayout());
+		panel_contain_online_user.setBounds(8, 69, 352, 251);
+		contentPane.add(panel_contain_online_user);
 		
-		JScrollPane scrollPane_online = new JScrollPane();
-		scrollPane_online.setLocation(5, 33);
-		scrollPane_online.setSize(100, 382);
-		contentPane.add(scrollPane_online);
+		panel_contain_online_user.add(createRootPane(),BorderLayout.CENTER);
 		
-		
-		JPanel Panel_online_contain=new JPanel(new MigLayout());
-	
-		scrollPane_online.setViewportView(Panel_online_contain);
-		OnlinePane onlinePane=new OnlinePane();
-		OnlinePane onlinePane2=new OnlinePane();
-		Panel_online_contain.setLayout(new GridLayout(0, 1, 10, 0));
-		Panel_online_contain.add(onlinePane);
-		Panel_online_contain.add(onlinePane2);
-		
-		
-
-		
-	
 		
 		
 		setVisible(true);
-		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		
+		
+		
+		
 	}
 
 //	public static void main(String[] args) {
@@ -167,7 +172,16 @@ public class ClientChat extends JFrame implements  ActionListener {
 		}
 		
 	}
+	public JPanel createMainPain() {
+		JPanel panel = new JPanel(new BorderLayout());
+		panel.setBorder(new EmptyBorder(10, 10, 10, 10));
 	
+		
+		panel.add(new JScrollPane(list2=testlist()));
+		return panel;
+
+	
+	}
 	public void SendText(BufferedWriter sender) {
 		
 		try {
@@ -200,16 +214,17 @@ public class ClientChat extends JFrame implements  ActionListener {
 			e.printStackTrace();
 		}
 	}
-	public void UpdateOnlineUserList() {
+	public static void UpdateOnlineUserList() {
 		DefaultListModel<String>listDML=new DefaultListModel<>();
-		for (ClientHandler clientHandler : ClientHandler.clientHandlers) {
-			if(!clientHandler.getClient().userName.equals(userName))
+		for (Account_Client_side account_Client_side : UserOnlinePanel_members) {
+			if(!account_Client_side.userName.equals(userName))
 			{
-				String tenCLient =clientHandler.getClient().userName;
-				listDML.addElement(tenCLient);
-				System.out.println("Ten add la : "+tenCLient);
+				
+				System.out.println("Ten add la : "+account_Client_side.userName);
 			}
 		}
+			
+		
 		
 		
 
@@ -220,5 +235,51 @@ public class ClientChat extends JFrame implements  ActionListener {
 //			user_online_list.setModel(dml);
 //		}
 		
+	}
+	public JPanel createMainPane() {
+		JPanel panel = new JPanel(new BorderLayout());
+		panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+	
+		
+		panel.add(new JScrollPane(list2=testlist()));
+		return panel;
+
+	
+	}
+	
+	public  JList<Account_Client_side> testlist() {
+		DefaultListModel<Account_Client_side>defaultListMode=new DefaultListModel<Account_Client_side>();
+		if(UserOnlinePanel_members==null) {
+			
+		}
+		else
+			for (Account_Client_side account_Client_side : UserOnlinePanel_members) {
+//				ImageIcon image=new ImageIcon("D:\\doananjavaky2\\img\\Copy-of-image3-social-wellness.png");
+//				Image ChangeImg=image.getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT);
+//				Icon icon=new ImageIcon(ChangeImg);
+				defaultListMode.addElement(account_Client_side);
+			}
+			
+			
+		
+	
+
+		JList<Account_Client_side> list3=new JList<Account_Client_side>(defaultListMode); 
+//		list3.setModel(defaultListMode);
+		list3.setCellRenderer(new OnlinePane());
+		return list3;
+	
+	}
+	public static void printOnlineUserList() {
+		System.out.println("Rong");
+		for (Account_Client_side account_Client_side : UserOnlinePanel_members) {
+			System.out.println(account_Client_side);
+			System.out.println("Da chay list");
+		}
+	}
+	public  void reloadUI_online() {
+	
+		panel_contain_online_user.add(createMainPain(),BorderLayout.CENTER);
+		this.repaint();
 	}
 }

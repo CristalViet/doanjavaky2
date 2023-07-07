@@ -101,6 +101,8 @@ public class ClientHandler extends Thread {
 							
 							String UserName=client.receiver.readLine();
 							String password=client.receiver.readLine();
+							String avatar=client.receiver.readLine();
+							String des=client.receiver.readLine();
 							System.out.println("Ten la"+UserName);
 							String Checker=CheckAccount(UserName, password);
 							System.out.println("chay toi day");
@@ -129,13 +131,41 @@ public class ClientHandler extends Thread {
 								client.sender.write("login success");
 								client.sender.newLine();
 								client.sender.flush();
+								// Nap list user cho user moi
+								for (ClientHandler ClientHandler :ClientHandler.clientHandlers) {
+									
+										client.sender.write("load user before");
+										client.sender.newLine();
+										client.sender.write(ClientHandler.client.userName);
+										client.sender.newLine();
+										client.sender.write(ClientHandler.client.avatar+"");
+										client.sender.newLine();
+										client.sender.write(ClientHandler.client.Description+"");
+										client.sender.newLine();
+										client.sender.flush();
+										
+									
+								}
+								client.sender.write("load UI");
+								client.sender.newLine();
+								client.sender.flush();
 								//gui thong tin user moi tham gia cho cac client khac
 								for (ClientHandler ClientHandler :ClientHandler.clientHandlers) {
 									if(client.userName.equals(ClientHandler.client.userName))
 											continue;
+									System.out.println("chay lien tuc");
 									ClientHandler.client.sender.write("new user online");
 									ClientHandler.client.sender.newLine();
+									ClientHandler.client.sender.write(UserName);
+									ClientHandler.client.sender.newLine();
+									ClientHandler.client.sender.write(avatar);
+									ClientHandler.client.sender.newLine();
+									ClientHandler.client.sender.write(des);
+									ClientHandler.client.sender.newLine();
 									ClientHandler.client.sender.flush();
+									client.sender.write("load UI");
+									client.sender.newLine();
+									client.sender.flush();
 								
 								}
 								
@@ -198,7 +228,28 @@ public class ClientHandler extends Thread {
 			
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+//				e.printStackTrace();
+				if(this.client.getUserName()!=null)
+	 			{ 
+					System.out.println("Thuc hien lenh");
+	 				for (ClientHandler clientHandler : clientHandlers) {
+	 					if(!clientHandler.equals(this))
+	 					{
+	 						try {
+	 							clientHandler.client.sender.write("user quit");
+	 							clientHandler.client.sender.newLine();
+	 							clientHandler.client.sender.write(this.client.getUserName());
+	 							clientHandler.client.sender.newLine();
+	 							clientHandler.client.sender.flush();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+	 						
+	 					}
+	 				}
+	 				RemoveClientHandler(this);
+	 			}
 			}
 			
 		
@@ -291,6 +342,8 @@ public class ClientHandler extends Thread {
  		} catch (ClassNotFoundException e) {
  			// TODO Auto-generated catch block
  			e.printStackTrace();
+ 			
+ 			
  		}
  		
  		
