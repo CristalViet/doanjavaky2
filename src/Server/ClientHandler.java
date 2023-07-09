@@ -2,6 +2,8 @@ package Server;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,14 +31,16 @@ public class ClientHandler extends Thread {
 	Client client;
 	public static List<ClientHandler> clientHandlers=new ArrayList<>();
 	public static int RoomCurrentNumber=0;
+	static OutputStream  os;
+	static InputStream  is;
 //	List<RoomServerSide>RoomList=new ArrayList<>();
 	public ClientHandler(Socket socket) throws IOException {
 		super();
 		this.client = new Client();
 		client.socket=socket;
-		OutputStream os=socket.getOutputStream();
+		 os=socket.getOutputStream();
 		client.sender=new BufferedWriter(new OutputStreamWriter(os,StandardCharsets.UTF_8));
-		InputStream is=socket.getInputStream();
+		 is=socket.getInputStream();
 		client.receiver=new BufferedReader(new InputStreamReader(is,StandardCharsets.UTF_8));
 		client.port=socket.getPort();
 		
@@ -202,6 +206,33 @@ public class ClientHandler extends Thread {
 							ServerPanel.UpdateJlistUserOnline();
 							break;
 						}
+						case "send emoji":{
+							String roomid=this.client.receiver.readLine();
+							int roomID = Integer.parseInt(roomid);
+							String NameEmoji=client.receiver.readLine();
+							RoomServerSide room = RoomServerSide.findRoom(ServerPanel.RoomList, roomID);
+							
+							for (String user : room.getUser()) {
+								System.out.println("Send emoji from " + this.client.userName + " to " + user);
+								Client currentClient = ClientHandler.findClientHandler(user).client;
+								if (currentClient != null) {
+									currentClient.sender.write("emoji from user to room");
+									currentClient.sender.newLine();
+									currentClient.sender.write(this.client.userName);
+									currentClient.sender.newLine();
+									currentClient.sender.write("" + roomID);
+									currentClient.sender.newLine();
+									currentClient.sender.write(NameEmoji);
+									currentClient.sender.newLine();
+									currentClient.sender.flush();
+		
+								
+								}
+							}
+							
+							break;
+						}
+					
 						case "request create room":{
 							String RoomName=client.receiver.readLine();
 							String RoomType=client.receiver.readLine();
@@ -286,8 +317,10 @@ public class ClientHandler extends Thread {
 							}
 							break;
 						}
-						case "text to room":{
-							int roomID = Integer.parseInt(this.client.receiver.readLine());
+						case "send text to room":{
+							String roomid=this.client.receiver.readLine();
+							
+							int roomID = Integer.parseInt(roomid);
 							String content = "";
 							char c;
 							do {
@@ -295,6 +328,34 @@ public class ClientHandler extends Thread {
 								if (c != '\0')
 									content += c;
 							} while (c != '\0');
+							System.out.println(content);
+							RoomServerSide room = RoomServerSide.findRoom(ServerPanel.RoomList, roomID);
+							for (String user : room.getUser()) {
+								System.out.println("Send text from " + this.client.userName + " to " + user);
+								Client currentClient = ClientHandler.findClientHandler(user).client;
+								if (currentClient != null) {
+									currentClient.sender.write("text from user to room");
+									currentClient.sender.newLine();
+									currentClient.sender.write(this.client.userName);
+									currentClient.sender.newLine();
+									currentClient.sender.write("" + roomID);
+									currentClient.sender.newLine();
+									currentClient.sender.write(content);
+									currentClient.sender.write('\0');
+									currentClient.sender.flush();
+								}
+							}
+							break;
+						}
+						
+						case "send file":{
+							String roomid=this.client.receiver.readLine();
+							int roomMessagesCount = Integer.parseInt(this.client.receiver.readLine());
+							String fileName = this.client.receiver.readLine();
+							int fileSize = Integer.parseInt(this.client.receiver.readLine());
+							int roomID = Integer.parseInt(roomid);
+							String content = "";
+							
 							System.out.println(content);
 							RoomServerSide room = RoomServerSide.findRoom(ServerPanel.RoomList, roomID);
 							for (String user : room.getUser()) {

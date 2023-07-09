@@ -5,8 +5,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +55,7 @@ import java.awt.LayoutManager;
 import java.awt.Panel;
 import java.awt.FlowLayout;
 
+import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import java.awt.CardLayout;
@@ -59,6 +64,7 @@ import java.awt.Dimension;
 
 import javax.swing.border.BevelBorder;
 import java.awt.Color;
+import javax.swing.ScrollPaneConstants;
 
 public class ClientChat extends JFrame implements  ActionListener {
 
@@ -101,7 +107,15 @@ public class ClientChat extends JFrame implements  ActionListener {
 		lblNewLabel.setBounds(20, 40, 95, 13);
 		contentPane.add(lblNewLabel);
 		
-		Send_btn = new JButton("Send");
+		Send_btn = new JButton("");
+		
+	
+		ImageIcon image=new ImageIcon("D:\\doananjavaky2\\img\\send_icon.png");
+		Image ChangeImg=image.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+	
+		Icon icon=new ImageIcon(ChangeImg);
+		
+		Send_btn.setIcon(icon);
 		Send_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String content = textArea_message.getText();
@@ -116,7 +130,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 			
 			}
 		});
-		Send_btn.setBounds(486, 439, 69, 23);
+		Send_btn.setBounds(765, 446, 50, 50);
 		contentPane.add(Send_btn);
 		
 		
@@ -124,10 +138,6 @@ public class ClientChat extends JFrame implements  ActionListener {
 		JLabel lblNewLabel_2 = new JLabel("Room Chat");
 		lblNewLabel_2.setBounds(20, 356, 95, 14);
 		contentPane.add(lblNewLabel_2);
-		
-		JScrollPane scrollPane_3 = new JScrollPane();
-		scrollPane_3.setBounds(125, 448, 263, 52);
-		contentPane.add(scrollPane_3);
 		
 //		for(int i=0;i<10;i++) {
 //			
@@ -151,10 +161,6 @@ public class ClientChat extends JFrame implements  ActionListener {
 		lb_avatar_nguoinhan.setBounds(380, 10, 50, 50);
 		contentPane.add(lb_avatar_nguoinhan);
 		
-		textArea_message = new JTextArea();
-		textArea_message.setBounds(377, 340, 360, 52);
-		contentPane.add(textArea_message);
-		
 		JScrollPane scrollPane_chatview = new JScrollPane();
 		scrollPane_chatview.setBounds(380, 69, 357, 261);
 		contentPane.add(scrollPane_chatview);
@@ -166,7 +172,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 		roomMessagesPanels = new ArrayList<RoomMessagesPanel>();
 		roomTabbedPane = new JTabbedPane();
 		roomTabbedPane.addChangeListener(new ChangeListener() {
-
+		
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				JScrollPane selectedTab = (JScrollPane) roomTabbedPane.getSelectedComponent();
@@ -179,7 +185,75 @@ public class ClientChat extends JFrame implements  ActionListener {
 
 			
 		});
+		Panel_ChatView.add(roomTabbedPane);
 		
+		JButton sad_btn = new JButton("");
+		sad_btn.setIcon(new ImageIcon("D:\\doananjavaky2\\img\\emoji\\emoji_sad.png"));
+		sad_btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+	          SockerHandler.sendEmoji(chattingRoom,"sad");
+	     
+			}
+		});
+		sad_btn.setBounds(380, 340, 50, 50);
+		contentPane.add(sad_btn);
+		
+		JButton smile_btn = new JButton("");
+		smile_btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 SockerHandler.sendEmoji(chattingRoom,"smile");
+			}
+		});
+		smile_btn.setIcon(new ImageIcon("D:\\doananjavaky2\\img\\emoji\\emoji_smile.png"));
+		smile_btn.setBounds(441, 340, 50, 50);
+		contentPane.add(smile_btn);
+		
+		JButton nervous_btn = new JButton("");
+		nervous_btn.setIcon(new ImageIcon("D:\\doananjavaky2\\img\\emoji\\emoji_nervous.png"));
+		nervous_btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 SockerHandler.sendEmoji(chattingRoom,"nervous");
+			}
+		});
+		nervous_btn.setBounds(501, 340, 50, 50);
+		contentPane.add(nervous_btn);
+		
+		JButton haha_btn = new JButton("");
+		haha_btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 SockerHandler.sendEmoji(chattingRoom,"haha");
+			}
+		});
+		haha_btn.setIcon(new ImageIcon("D:\\doananjavaky2\\img\\emoji\\emoji_haha.png"));
+		haha_btn.setBounds(561, 340, 50, 50);
+		contentPane.add(haha_btn);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setBounds(380, 446, 357, 56);
+		contentPane.add(scrollPane);
+		
+		textArea_message = new JTextArea();
+		scrollPane.setViewportView(textArea_message);
+		
+		JButton file_btn = new JButton("File");
+		file_btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+			}
+		});
+		file_btn.setBounds(621, 345, 50, 37);
+		contentPane.add(file_btn);
+		
+		JButton voice_btn = new JButton("VoiceCall");
+		voice_btn.setBounds(747, 176, 79, 56);
+		contentPane.add(voice_btn);
+		
+		JButton webcam_btn = new JButton("VideoCAll");
+		webcam_btn.setBounds(747, 242, 75, 56);
+		contentPane.add(webcam_btn);
 		
 		
 		
@@ -250,6 +324,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 			e.printStackTrace();
 		}
 	}
+	
 	public void UserExit(BufferedWriter sender) {
 		
 		try {
@@ -312,7 +387,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 				}));
 	}
 
-	
+
 	public static class RoomMessagesPanel extends JPanel {
 		private static final long serialVersionUID = 1L;
 		public Room room;
@@ -492,5 +567,4 @@ public class ClientChat extends JFrame implements  ActionListener {
 		
 
 	}
-	
 }

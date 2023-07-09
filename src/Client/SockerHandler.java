@@ -2,6 +2,8 @@ package Client;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +34,8 @@ public class SockerHandler extends Thread {
 	public BufferedReader receiver;
 	public String avatarLink;
 	public String description ;
+	public static InputStream is;
+	public static OutputStream os;
 	Thread receiveAndProcessThread;
 	static ArrayList<Account_Client_side>clientAccountList=new ArrayList<>();
 	public static List<Room>  allRooms=new ArrayList<>();
@@ -41,8 +45,8 @@ public class SockerHandler extends Thread {
 		Server = new Socket("localhost", port);
 		this.userName=userName;
 		this.password=password;
-		InputStream is=Server.getInputStream();
-		OutputStream os=Server.getOutputStream();
+		 is=Server.getInputStream();
+		 os=Server.getOutputStream();
 		this.sender = new BufferedWriter(new OutputStreamWriter(os));
 		this.receiver = new BufferedReader(new InputStreamReader(is));
 		
@@ -53,8 +57,8 @@ public class SockerHandler extends Thread {
 		Server = new Socket("localhost", port);
 		this.userName=userName;
 		this.password=password;
-		InputStream is=Server.getInputStream();
-		OutputStream os=Server.getOutputStream();
+		 is=Server.getInputStream();
+		 os=Server.getOutputStream();
 		this.sender = new BufferedWriter(new OutputStreamWriter(os));
 		this.receiver = new BufferedReader(new InputStreamReader(is));
 		this.avatarLink=avatarLink;
@@ -210,6 +214,14 @@ public class SockerHandler extends Thread {
 									ClientChat.addNewMessage(roomID, "text", user, content);
 									break;
 								}
+								case "emoji from user to room":{
+									String user = receiver.readLine();
+									System.out.println("nguoi gui emoji"+user);
+									int roomID = Integer.parseInt(receiver.readLine());
+									String nameEmoji=receiver.readLine();
+									ClientChat.addNewMessage(roomID, "emoji", user, nameEmoji);
+									break;
+								}
 								
 							}
 								
@@ -305,12 +317,13 @@ public class SockerHandler extends Thread {
 	public static void SendTextToRoomChat(int idroom, String content) {
 			
 			try {
-				sender.write("request send text to room");
+				sender.write("send text to room");
 				sender.newLine();
-				sender.write(idroom);
+				sender.write(idroom+"");
 				sender.newLine();
+				
 				sender.write(content);
-				sender.newLine();
+				sender.write('\0');
 				sender.flush();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -318,6 +331,52 @@ public class SockerHandler extends Thread {
 			}
 		
 	}
+	public static void sendFileToRoom(int idroom,String fileName,String filePath) {
+		try {
+			System.out.println("Send file " + fileName + " to room " + idroom);
+			File file = new File(filePath);
+			Room room = Room.findRoom(allRooms, idroom);
+			sender.write("send file");
+			sender.newLine();
+			sender.write(idroom+"");
+			sender.newLine();
+			sender.write(fileName);
+			sender.newLine();
+			sender.write("" + file.length());
+			sender.newLine();
+			sender.flush();
+			byte[] buffer = new byte[1024];
+			InputStream in = new FileInputStream(file);
+			OutputStream out = os;
+
+			int count;
+			while ((count = in.read(buffer)) > 0) {
+				out.write(buffer, 0, count);
+			}
+
+			in.close();
+			out.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public static void  sendEmoji(int idroom,String tenEmoji) {
+		try {
+			sender.write("send emoji");
+			sender.newLine();
+			sender.write(idroom+"");
+			sender.newLine();
+			sender.write(tenEmoji);
+			sender.newLine();
+			sender.flush();
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	
 	public static void CreatePrivateRoom(String otherUserName) {
 	
