@@ -18,7 +18,9 @@ import javax.swing.Icon;
 import javax.swing.GroupLayout.Alignment;
 import net.miginfocom.swing.MigLayout;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 
 import javax.swing.SpringLayout;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -30,27 +32,33 @@ public class OnlinePane extends JPanel implements ListCellRenderer<Account_Clien
 	/**
 	 * Create the panel.
 	 */
-	private JPanel avatarLabel=new JPanel();
+	private JPanel avatarLabel;
 	private JPanel TextLabel;
 	private JLabel ten_lb;
 	private JLabel anh_lb;
 	private JLabel des_lb;
 	public OnlinePane() {
-		setSize(200, 50);
-	
-		TextLabel=new JPanel(new GridLayout(0, 1));
+		setSize(213, 65);
+		avatarLabel=new JPanel(new BorderLayout());
+		TextLabel=new JPanel(new GridLayout(1, 0));
 		des_lb=new JLabel();
 		anh_lb=new JLabel();
+		avatarLabel.add(anh_lb,BorderLayout.CENTER);
+		anh_lb.setPreferredSize(new Dimension(100, 100));
+		ImageIcon image=new ImageIcon("D:\\doananjavaky2\\img\\anh-nguoi-dep-trung-quoc.jpg");
+		Image ChangeImg=image.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+		Icon icon=new ImageIcon(ChangeImg);
+		
+		anh_lb.setIcon(icon);
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(5,5,5,5));
 		ten_lb = new JLabel("Việt");
-		avatarLabel.add(anh_lb);
+		
 		TextLabel.add(ten_lb);
 		TextLabel.add(des_lb);
+		
 		add(avatarLabel,BorderLayout.WEST);
 		add(TextLabel,BorderLayout.CENTER);
-		
-		
 		
 
 	}
@@ -61,12 +69,20 @@ public class OnlinePane extends JPanel implements ListCellRenderer<Account_Clien
 	public Component getListCellRendererComponent(JList<? extends Account_Client_side> list, Account_Client_side value,
 			int index, boolean isSelected, boolean cellHasFocus) {
 		// TODO Auto-generated method stub
-		ImageIcon image=new ImageIcon(value.getAvatar());
+		ImageIcon image=new ImageIcon("D:\\doananjavaky2\\img\\anh-nguoi-dep-trung-quoc.jpg");
 		Image ChangeImg=image.getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT);
 		Icon icon=new ImageIcon(ChangeImg);
+		System.out.println(value.getAvatar());
 		anh_lb.setIcon(icon);
 		ten_lb.setText(value.getUserName());
 		des_lb.setText(value.getDescription());
+		if(isSelected) {
+			setBackground(Color.GRAY); 
+		}
+		else {
+            setBackground(Color.WHITE); 
+
+		}
 		return this;
 	}
 	

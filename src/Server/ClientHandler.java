@@ -19,14 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.DefaultListModel;
+import javax.swing.JOptionPane;
 
+import Client.ClientChat;
 import Client.Room;
+import Client.SockerHandler;
 
 public class ClientHandler extends Thread {
 	Client client;
 	public static List<ClientHandler> clientHandlers=new ArrayList<>();
 	public static int RoomCurrentNumber=0;
-	List<RoomServerSide>RoomList=new ArrayList<>();
+//	List<RoomServerSide>RoomList=new ArrayList<>();
 	public ClientHandler(Socket socket) throws IOException {
 		super();
 		this.client = new Client();
@@ -67,6 +70,7 @@ public class ClientHandler extends Thread {
 							String UserName=client.receiver.readLine();
 							String password=client.receiver.readLine();
 							String avatarLink=client.receiver.readLine();
+							
 							String des=client.receiver.readLine();
 							System.out.println(UserName+" "+password+" "+avatarLink);
 							String Checker=CheckAccount(UserName, password);
@@ -75,6 +79,8 @@ public class ClientHandler extends Thread {
 							{
 								
 								client.userName=UserName;
+								client.avatar=avatarLink;
+								client.Description=des;
 								clientHandlers.add(this);
 								ServerPanel.userlist2.add(UserName);
 								
@@ -102,15 +108,19 @@ public class ClientHandler extends Thread {
 							String UserName=client.receiver.readLine();
 							String password=client.receiver.readLine();
 							String avatar=client.receiver.readLine();
+							
 							String des=client.receiver.readLine();
 							System.out.println("Ten la"+UserName);
+							System.out.println("Link anh:"+avatar);
 							String Checker=CheckAccount(UserName, password);
 							System.out.println("chay toi day");
 							System.out.println(Checker);
 							if(Checker.equals("thanh cong")&&!CheckClientHandler(UserName)) {
 								client.userName=UserName;
+								this.client.avatar=avatar;
+								client.Description=des;
 								clientHandlers.add(this);
-								
+								//Gắn avatar , des cho client rồi khi đi truyền client đó cho các user kh
 								
 								
 								
@@ -195,34 +205,116 @@ public class ClientHandler extends Thread {
 						case "request create room":{
 							String RoomName=client.receiver.readLine();
 							String RoomType=client.receiver.readLine();
-							int NumberOfUsers=Integer.parseInt(client.receiver.readLine());
+							System.out.println(RoomType);
+							String so=client.receiver.readLine();
+							System.out.println(so);
+							int NumberOfUsers=Integer.parseInt(so);
 							List<String>listUser=new ArrayList<>();
 							for(int i=0;i<NumberOfUsers;i++) {
 								listUser.add(client.receiver.readLine());
+								
 							}
 							
-							//tang so luong room
-//							RoomCurrentNumber++;
-//							RoomServerSide room=new RoomServerSide(RoomCurrentNumber, RoomName, listUser);
-//							RoomList.add(room);
+//							tang so luong room
+							RoomCurrentNumber++;
+							System.out.println("so luong phong"+RoomCurrentNumber);
+							RoomServerSide room=new RoomServerSide(RoomCurrentNumber, RoomName, listUser);
+							
+								try {
+						
+								
+										ServerPanel.RoomList.add(room);
+										for (String user : listUser) {
+											BufferedWriter currentClientSender = findClientHandler(user).client.getSender();
+											currentClientSender.write("new room");
+											currentClientSender.newLine();
+											System.out.println("Check id"+room.getId());
+											currentClientSender.write("" + room.getId());
+											currentClientSender.newLine();
+											currentClientSender.write(this.client.userName);//who create
+											currentClientSender.newLine();
+											if (RoomType.equals("private")) 
+												// private chat thì tên room của mỗi người sẽ là tên của người kia
+												{
+												for (String ten_nguoi_dung : listUser) {
+													if(!ten_nguoi_dung.equals(user)) {
+														System.out.println("Ten nguoi dung hien tai:"+user);
+														System.out.println("Ten nguoi dung dat phong:"+ten_nguoi_dung);
+														currentClientSender.write(ten_nguoi_dung);
+														currentClientSender.newLine();
+														break;
+													}
+												}
+													
+												}
+												//nếu khác private chat thì là group chat
+												else {
+													currentClientSender.write(RoomName);
+													currentClientSender.newLine();
+
+													
+												}
+												currentClientSender.write(RoomType);
+												currentClientSender.newLine();
+												currentClientSender.write("" + listUser.size());
+												currentClientSender.newLine();
+												
+												for (String userr : listUser) {
+													currentClientSender.write(userr);
+													currentClientSender.newLine();
+												}
+												
+												currentClientSender.flush();
+											 } 
+									
+									
+									
+								} catch (Exception e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								
+							
+							
+								
+								
+							
+						
+								
+							for (RoomServerSide roomServerSide : ServerPanel.RoomList) {
+								System.out.println(roomServerSide);
+							}
 							break;
 						}
-						case "request sendtext":{
-							
-							String msg=client.receiver.readLine();
-							System.out.println("Thong diep cua client: "+msg);
-							for (ClientHandler clientHandler : clientHandlers) {
-								if(!clientHandler.equals(this))
-								{	
-									clientHandler.client.sender.write("textToUser");
-									clientHandler.client.sender.newLine();
-									clientHandler.client.sender.write(msg);
-									clientHandler.client.sender.newLine();
-									clientHandler.client.sender.flush();
+						case "text to room":{
+							int roomID = Integer.parseInt(this.client.receiver.readLine());
+							String content = "";
+							char c;
+							do {
+								c = (char) this.client.receiver.read();
+								if (c != '\0')
+									content += c;
+							} while (c != '\0');
+							System.out.println(content);
+							RoomServerSide room = RoomServerSide.findRoom(ServerPanel.RoomList, roomID);
+							for (String user : room.getUser()) {
+								System.out.println("Send text from " + this.client.userName + " to " + user);
+								Client currentClient = ClientHandler.findClientHandler(user).client;
+								if (currentClient != null) {
+									currentClient.sender.write("text from user to room");
+									currentClient.sender.newLine();
+									currentClient.sender.write(this.client.userName);
+									currentClient.sender.newLine();
+									currentClient.sender.write("" + roomID);
+									currentClient.sender.newLine();
+									currentClient.sender.write(content);
+									currentClient.sender.write('\0');
+									currentClient.sender.flush();
 								}
 							}
+							break;
 						}
-						
+					
 					}
 				}
 			
@@ -281,7 +373,7 @@ public class ClientHandler extends Thread {
 		}
 		return false;
 	}
-	public ClientHandler findClientHandler(String name) {
+	public static ClientHandler findClientHandler(String name) {
 		for (ClientHandler client : clientHandlers) {
 			if(name.equals(client.getClient().userName)) {
 				return client;
@@ -290,6 +382,7 @@ public class ClientHandler extends Thread {
 		return null;
 	}
 	public void RemoveClientHandler(ClientHandler clienthandler) {
+		
 		for (ClientHandler client : ClientHandler.clientHandlers) {
 			   if(client.equals(clienthandler)) {
 				   ClientHandler.clientHandlers.remove(clienthandler);

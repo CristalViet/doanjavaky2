@@ -6,11 +6,14 @@ import java.awt.Image;
 import java.awt.Panel;
 import java.awt.ScrollPane;
 import java.awt.Scrollbar;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.AbstractListModel;
 import javax.swing.DefaultListModel;
 import javax.swing.Icon;
@@ -51,7 +54,18 @@ public class mylist extends JFrame {
 		getContentPane().add(createMainPain());
 		
 		
-
+		list2.addMouseListener(new MouseAdapter() {
+		    @Override
+		    public void mouseClicked(MouseEvent e) {
+		        if (e.getClickCount() == 1) { // Kiểm tra số lần click (ở đây là 1 click)
+		            int selectedIndex = list2.getSelectedIndex(); // Lấy chỉ số của item được chọn
+		            myobject selectedAccount = list2.getSelectedValue(); // Lấy giá trị của item được chọn
+		            JOptionPane.showMessageDialog(null, "Hello"+selectedAccount);
+		            // Xử lý sự kiện khi item được chọn
+		            // ...
+		        }
+		    }
+		});
 		
 		
 //	

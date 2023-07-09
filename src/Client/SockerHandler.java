@@ -8,6 +8,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JOptionPane;
 
@@ -18,15 +25,17 @@ import Server.ServerPanel;
 
 public class SockerHandler extends Thread {
 	
-	public String userName;
+	public static  String userName;
 	public String password;
 	public Socket Server;
-	public BufferedWriter sender;
+	public static BufferedWriter sender;
 	public BufferedReader receiver;
-	public String avatarLink="";
-	public String description="";
+	public String avatarLink;
+	public String description ;
 	Thread receiveAndProcessThread;
-
+	static ArrayList<Account_Client_side>clientAccountList=new ArrayList<>();
+	public static List<Room>  allRooms=new ArrayList<>();
+	public List<String>listIDphong=new ArrayList<>();
 	public SockerHandler(String userName, String password, int port) throws IOException {
 		super();
 		Server = new Socket("localhost", port);
@@ -55,17 +64,20 @@ public class SockerHandler extends Thread {
 	
 	public void login(String trangthai) throws IOException{
 		String Result;	
+		napAccount();
+		Account_Client_side ac= findAccount(userName);
 		if(trangthai.equals("dang nhap"))
 			{
 				sender.write("new login");
 				sender.newLine();
-				sender.write(userName);
+				sender.write(ac.userName);
 				sender.newLine();
 				sender.write(password);
 				sender.newLine();
-				sender.write(avatarLink);
+				System.out.println("Link avatar:"+ac.Avatar);
+				sender.write(ac.Avatar+"");
 				sender.newLine();
-				sender.write(description);
+				sender.write(ac.Description+"");
 				sender.newLine();
 				sender.flush();
 				
@@ -100,6 +112,55 @@ public class SockerHandler extends Thread {
 									ClientChat.UpdateOnlineUserList();
 									
 									clientChat.printOnlineUserList();
+									clientChat.reloadUI_online();
+									break;
+								}
+								case "new room": {
+									String roomIDString=receiver.readLine();
+									System.out.println(roomIDString);
+									
+									int roomID = Integer.parseInt(roomIDString);
+									listIDphong.add(roomIDString);
+									String whoCreate = receiver.readLine();
+									System.out.println("ng tao"+whoCreate);
+									String name = receiver.readLine();
+									String type = receiver.readLine();
+									String numberString=receiver.readLine();
+								
+									int roomUserCount = Integer.parseInt(numberString);
+									List<String> users = new ArrayList<String>();
+									for (int i = 0; i < roomUserCount; i++)
+									{
+										String thanhvien=receiver.readLine();
+										System.out.println("Thanh vien:"+thanhvien);
+										users.add(thanhvien);
+									}
+										
+
+									Room newRoom = new Room(roomID, name, type, users);
+									this.allRooms.add(newRoom);
+									//set  panel
+//									ClientChat.newRoomTab(newRoom);
+									//
+									Room.InRoom(allRooms);
+									clientChat.newRoomTab(newRoom);
+									if(type.equals("private")) {
+										String nguoidungkhac=new String();
+										for (String string : users) {
+											if(!string.equals(userName)) {
+												System.out.println(nguoidungkhac);
+											 nguoidungkhac=string;
+											}
+											
+										}
+										ClientChat.chattingRoom= Room.findPrivateRoom(SockerHandler.allRooms, nguoidungkhac).getId();
+										System.out.println("Id room hien tai"+ClientChat.chattingRoom);
+									}
+//									
+									ClientChat.addNewMessage(newRoom.getId(), "notify", whoCreate,type.equals("group") ? "Đã tạo group" : "Đã mở chat");
+//									Main.mainScreen.updateGroupJList();
+									
+									
 									break;
 								}
 								case "load user before":{
@@ -111,6 +172,7 @@ public class SockerHandler extends Thread {
 									ClientChat.UpdateOnlineUserList();
 									
 									clientChat.printOnlineUserList();
+									clientChat.reloadUI_online();
 									
 								}
 								case "load UI":{
@@ -135,17 +197,35 @@ public class SockerHandler extends Thread {
 									
 									break;
 								}
-								case "textToUser":{
-									String msg=receiver.readLine();
-									System.out.println("Nhan duoc "+msg);
-									clientChat.textPane_display.setText(ClientChat.textPane_display.getText()+msg);
+								case "text from user to room":{
+									String user = receiver.readLine();
+									int roomID = Integer.parseInt(receiver.readLine());
+									String content = "";
+									char c;
+									do {
+										c = (char) receiver.read();
+										if (c != '\0')
+											content += c;
+									} while (c != '\0');
+									ClientChat.addNewMessage(roomID, "text", user, content);
 									break;
 								}
+								
 							}
 								
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
+								try {
+									sender.write("user exit");
+									sender.newLine();
+									sender.flush();
+								} catch (IOException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
+							
+							
 							}
 							 
 						  }						  
@@ -222,7 +302,7 @@ public class SockerHandler extends Thread {
 		run(method);
 		
 	}
-	public void SendTextToRoomChat(int idroom, String content) {
+	public static void SendTextToRoomChat(int idroom, String content) {
 			
 			try {
 				sender.write("request send text to room");
@@ -239,7 +319,7 @@ public class SockerHandler extends Thread {
 		
 	}
 	
-	public void CreatePrivateRoom(String otherUserName) {
+	public static void CreatePrivateRoom(String otherUserName) {
 	
 			try {
 				sender.write("request create room");
@@ -248,10 +328,12 @@ public class SockerHandler extends Thread {
 				sender.newLine();
 				sender.write("private");
 				sender.newLine();
-				sender.write(2);
+				sender.write("2");
+				sender.newLine();
 				sender.write(userName);
 				sender.newLine();
 				sender.write(otherUserName);
+				sender.newLine();
 				sender.flush();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -271,7 +353,53 @@ public class SockerHandler extends Thread {
 		}
 		
 	}
-	
+	public static void napAccount() {
+		String driverName="com.microsoft.sqlserver.jdbc.SQLServerDriver";
+ 		String url="jdbc:sqlserver://localhost:1433;databaseName=chat;integratedSecurity=false;trustServerCertificate=true";
+ 		String user="viet2";
+ 		String pass="123";
+ 		try {
+ 			Class.forName(driverName);
+ 			Connection con=DriverManager.getConnection(url, user, pass);
+ 			Statement stmt=con.createStatement();
+ 			String sql1="select* from account";
+           ResultSet smt=stmt.executeQuery(sql1);
+ 		         //duyet tung dong trong result
+           SockerHandler.clientAccountList.clear();
+ 		    while(smt.next()) {
+ 		    	String username=smt.getNString(1);
+ 		    	
+ 		    	
+ 		    	String avatarLink=smt.getNString(3);
+ 		    	String description=smt.getNString(4);
+ 		    	
+ 		    	Account_Client_side ac=new Account_Client_side(username, avatarLink, description);
+ 		    	SockerHandler.clientAccountList.add(ac);
+ 		    }
+ 		        
+ 		} catch (ClassNotFoundException e) {
+ 			// TODO Auto-generated catch block
+ 			e.printStackTrace();
+ 		}
+ 		
+ 		
+ 			
+ 		 catch (SQLException e) {
+ 			// TODO Auto-generated catch block
+ 			e.printStackTrace();
+ 		}
+	}
+	public static Account_Client_side findAccount(String username){
+		for (Account_Client_side account_Client_side : clientAccountList) {
+			if(account_Client_side.userName.equals(username)) {
+				return account_Client_side;
+			}
+		}
+		return null;
+	}
+	public static String getUserName() {
+		return userName;
+	}
 	
 	
 }

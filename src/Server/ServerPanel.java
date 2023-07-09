@@ -52,6 +52,7 @@ public class ServerPanel extends JFrame {
 	boolean isServerOpen=false;
 	public static  List<String>userlist2=new ArrayList<>();
 	public static JList<String>list =new JList<>();
+	public static List<RoomServerSide>RoomList=new ArrayList<>();
 	JLabel lb_ipaddress;
 	JLabel lb_status ;
 	JLabel lb_port;
@@ -79,7 +80,7 @@ public class ServerPanel extends JFrame {
 		setBounds(100, 100, 779, 446);
 		contentPane = new JPanel();
 		contentPane.setBorder(new LineBorder(new Color(0, 0, 0), 3, true));
-
+	
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		

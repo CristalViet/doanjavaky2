@@ -59,5 +59,12 @@ public class Client {
 	public void setSender(BufferedWriter sender) {
 		this.sender = sender;
 	}
+	public static Client findClient(List<Client> clientList, String userName) {
+		for (Client client : clientList) {
+			if (client.userName.equals(userName))
+				return client;
+		}
+		return null;
+	}
 	
 }
