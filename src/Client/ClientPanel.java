@@ -42,7 +42,7 @@ import java.awt.Color;
 public class ClientPanel extends JFrame {
 
 	private JPanel contentPane;
-	private Socket server;
+	public Socket server;
 	private OutputStream Os;
 	private InputStream Is;
 	private BufferedReader receive;

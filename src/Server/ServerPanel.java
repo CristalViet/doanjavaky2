@@ -53,6 +53,7 @@ public class ServerPanel extends JFrame {
 	public static  List<String>userlist2=new ArrayList<>();
 	public static JList<String>list =new JList<>();
 	public static List<RoomServerSide>RoomList=new ArrayList<>();
+	public static int portMax=1000;
 	JLabel lb_ipaddress;
 	JLabel lb_status ;
 	JLabel lb_port;
@@ -301,6 +302,19 @@ public class ServerPanel extends JFrame {
 		for (String string : userlist2) {
 			dml.addElement(string);
 			System.out.println(string);
+		}
+		list.setModel(dml);
+	
+	}
+	public static void UpdateJlistUserOnline2() {
+		
+		DefaultListModel<String>dml=new DefaultListModel<>();
+		
+		list.removeAll();
+		
+		
+		for (ClientHandler clientHandler : ClientHandler.clientHandlers) {
+			dml.addElement(clientHandler.client.userName); 
 		}
 		list.setModel(dml);
 	

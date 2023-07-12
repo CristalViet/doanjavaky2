@@ -3,6 +3,8 @@ package Server;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +71,7 @@ public class ClientHandler extends Thread {
 				
 						System.out.println("Received request from user");
 						System.out.println(CommandLine);
-						switch (CommandLine) {
+						switch (CommandLine+"") {
 						case "new signup":{
 							String UserName=client.receiver.readLine();
 							String password=client.receiver.readLine();
@@ -103,6 +105,12 @@ public class ClientHandler extends Thread {
 								client.sender.flush();
 								CreateAccount(UserName, password, avatarLink, des);
 								System.out.println("Server: signup success");
+							}
+							else {
+								client.sender.write("signup failed");
+								
+								client.sender.newLine();
+								client.sender.flush();
 							}
 							break;
 						}
@@ -203,7 +211,8 @@ public class ClientHandler extends Thread {
 						case "user exit":{
 							RemoveClientHandler(this);
 							UpdateClientHandlerListToServer();
-							ServerPanel.UpdateJlistUserOnline();
+					
+							ServerPanel.UpdateJlistUserOnline2();
 							break;
 						}
 						case "send emoji":{
@@ -214,20 +223,23 @@ public class ClientHandler extends Thread {
 							
 							for (String user : room.getUser()) {
 								System.out.println("Send emoji from " + this.client.userName + " to " + user);
-								Client currentClient = ClientHandler.findClientHandler(user).client;
-								if (currentClient != null) {
-									currentClient.sender.write("emoji from user to room");
-									currentClient.sender.newLine();
-									currentClient.sender.write(this.client.userName);
-									currentClient.sender.newLine();
-									currentClient.sender.write("" + roomID);
-									currentClient.sender.newLine();
-									currentClient.sender.write(NameEmoji);
-									currentClient.sender.newLine();
-									currentClient.sender.flush();
-		
-								
+								if(!(ClientHandler.findClientHandler(user)==null)) {
+									Client currentClient = ClientHandler.findClientHandler(user).client;
+									if (currentClient != null) {
+										currentClient.sender.write("emoji from user to room");
+										currentClient.sender.newLine();
+										currentClient.sender.write(this.client.userName);
+										currentClient.sender.newLine();
+										currentClient.sender.write("" + roomID);
+										currentClient.sender.newLine();
+										currentClient.sender.write(NameEmoji);
+										currentClient.sender.newLine();
+										currentClient.sender.flush();
+			
+									
+									}
 								}
+								
 							}
 							
 							break;
@@ -352,28 +364,168 @@ public class ClientHandler extends Thread {
 							String roomid=this.client.receiver.readLine();
 							int roomMessagesCount = Integer.parseInt(this.client.receiver.readLine());
 							String fileName = this.client.receiver.readLine();
+							
 							int fileSize = Integer.parseInt(this.client.receiver.readLine());
 							int roomID = Integer.parseInt(roomid);
-							String content = "";
 							
-							System.out.println(content);
+							
+							
+							int dotIndex = fileName.lastIndexOf('.');
+							String saveFileName = "files/" + fileName.substring(0, dotIndex)
+									+ String.format("%02d%04d", roomID, roomMessagesCount) + fileName.substring(dotIndex);
+							System.out.println("thuc hien lenh dong ch");
+							File file = new File(saveFileName);
+							byte[] buffer = new byte[1024];
+							InputStream in = this.client.socket.getInputStream();
+							OutputStream out = new FileOutputStream(file);
+
+							int receivedSize = 0;
+							int count;
+							while ((count = in.read(buffer)) > 0) {
+								out.write(buffer, 0, count);
+								receivedSize += count;
+								if (receivedSize >= fileSize)
+									break;
+							}
+							
+							out.close();
 							RoomServerSide room = RoomServerSide.findRoom(ServerPanel.RoomList, roomID);
 							for (String user : room.getUser()) {
-								System.out.println("Send text from " + this.client.userName + " to " + user);
 								Client currentClient = ClientHandler.findClientHandler(user).client;
 								if (currentClient != null) {
-									currentClient.sender.write("text from user to room");
+									currentClient.sender.write("file from user to room");
 									currentClient.sender.newLine();
 									currentClient.sender.write(this.client.userName);
 									currentClient.sender.newLine();
 									currentClient.sender.write("" + roomID);
 									currentClient.sender.newLine();
-									currentClient.sender.write(content);
-									currentClient.sender.write('\0');
+									currentClient.sender.write(fileName);
+									currentClient.sender.newLine();
 									currentClient.sender.flush();
 								}
 							}
 							break;
+						}
+						case "request download file":{
+							try {
+								int roomID = Integer.parseInt(this.client.receiver.readLine());
+								int messageIndex = Integer.parseInt(this.client.receiver.readLine());
+								String fileName = this.client.receiver.readLine();
+
+								int dotIndex = fileName.lastIndexOf('.');
+								fileName = "files/" + fileName.substring(0, dotIndex)
+										+ String.format("%02d%04d", roomID, messageIndex) + fileName.substring(dotIndex);
+								File file = new File(fileName);
+
+								this.client.sender.write("response download file");
+								this.client.sender.newLine();
+								this.client.sender.write("" + file.length());
+								this.client.sender.newLine();
+								this.client.sender.flush();
+
+								byte[] buffer = new byte[1024];
+								InputStream in = new FileInputStream(file);
+								OutputStream out =client.socket.getOutputStream() ;
+
+								int count;
+								while ((count = in.read(buffer)) > 0) {
+									out.write(buffer, 0, count);
+								}
+								out.flush();
+								in.close();
+								
+							} catch (IOException ex) {
+								ex.printStackTrace();
+							}
+							break;
+						}
+						case "get generate port":{
+							ServerPanel.portMax++;
+							this.client.sender.write("return generate port");
+							this.client.sender.newLine();
+							this.client.sender.write(ServerPanel.portMax+"");
+							this.client.sender.newLine();
+							this.client.sender.flush();
+							break;
+						}
+						case "user deny call":{
+							int idroom=Integer.parseInt(this.client.receiver.readLine());
+							String Whosend=this.client.receiver.readLine();
+							for (ClientHandler clientHandler : clientHandlers) {
+								if(clientHandler.client.getUserName().equals(Whosend)) {
+									clientHandler.client.sender.write("user deny call");
+									clientHandler.client.sender.newLine();
+									clientHandler.client.sender.flush();
+									break;
+								}
+							}
+							
+							
+						
+							break;
+						}
+						case "voice chat":{
+							
+							int roomID = Integer.parseInt(this.client.receiver.readLine());
+							int port=Integer.parseInt(this.client.receiver.readLine());
+							RoomServerSide room = RoomServerSide.findRoom(ServerPanel.RoomList, roomID);
+							for (String user : room.getUser()) {
+								System.out.println("Make voice from " + this.client.userName + " to " + user);
+								Client currentClient = ClientHandler.findClientHandler(user).client;
+								if (currentClient != null) {
+									currentClient.sender.write("voice from user to room");
+									currentClient.sender.newLine();
+									currentClient.sender.write(this.client.userName);
+									currentClient.sender.newLine();
+									currentClient.sender.write("" + roomID);
+									currentClient.sender.newLine();
+									currentClient.sender.write(port+"");
+									currentClient.sender.newLine();
+									
+									currentClient.sender.flush();
+								}
+							}
+							
+							break;
+						}
+						
+						case "end call":{
+							int idroom=Integer.parseInt(this.client.receiver.readLine());
+							RoomServerSide room=RoomServerSide.findRoom(ServerPanel.RoomList, idroom);
+							for (String user : room.getUser()) {
+								System.out.println("end voice from " + this.client.userName + " to " + user);
+								Client currentClient = ClientHandler.findClientHandler(user).client;
+								if (currentClient != null) {
+									currentClient.sender.write("end call");
+									currentClient.sender.newLine();
+									
+									
+									
+									
+									currentClient.sender.flush();
+								}
+							}
+							break;
+						}
+						case "accept voice" :{
+							int idroom=Integer.parseInt(this.client.receiver.readLine());
+							RoomServerSide room=RoomServerSide.findRoom(ServerPanel.RoomList, idroom);
+							for (String user : room.getUser()) {
+								System.out.println("end voice from " + this.client.userName + " to " + user);
+								if(!user.equals(this.client.userName)) {
+									Client currentClient = ClientHandler.findClientHandler(user).client;
+									if (currentClient != null) {
+										currentClient.sender.write("accept voice");
+										currentClient.sender.newLine();
+										currentClient.sender.flush();
+										
+										
+										
+										
+									}	
+								}
+								
+							}
 						}
 					
 					}
@@ -394,14 +546,18 @@ public class ClientHandler extends Thread {
 	 							clientHandler.client.sender.write(this.client.getUserName());
 	 							clientHandler.client.sender.newLine();
 	 							clientHandler.client.sender.flush();
+	 							
 							} catch (IOException e1) {
 								// TODO Auto-generated catch block
-								e1.printStackTrace();
+//								e1.printStackTrace();
 							}
 	 						
+	 						
 	 					}
+	 					
 	 				}
 	 				RemoveClientHandler(this);
+	 				ServerPanel.UpdateJlistUserOnline2();
 	 			}
 			}
 			

@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -44,6 +45,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JTextField;
 import javax.swing.JTextArea;
 
@@ -75,9 +77,14 @@ public class ClientChat extends JFrame implements  ActionListener {
 	JButton Send_btn;
 	private   JPanel panel_contain_online_user=new JPanel();
 	public static JPanel Panel_ChatView;
-	private static JLabel lb_avatar_nguoinhan;
 	static JTabbedPane roomTabbedPane;
 	static List<RoomMessagesPanel> roomMessagesPanels;
+	public JButton sad_btn;
+	JButton smile_btn;
+	JButton nervous_btn;
+	JButton haha_btn;
+	JButton file_btn;
+	JButton voice_btn;
 	ChatPrivateFrame chatPrivateFrame;
 	JTextArea textArea_message;
 	 static String userName;
@@ -93,7 +100,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 	 */
 	public ClientChat(String userName,BufferedWriter sender) {
 		this.userName=userName;
-		
+		SockerHandler.GetGeneratePort();
 		
 		setTitle(userName);
 		setBounds(100, 100, 853, 589);
@@ -108,6 +115,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 		contentPane.add(lblNewLabel);
 		
 		Send_btn = new JButton("");
+		Send_btn.setEnabled(false);
 		
 	
 		ImageIcon image=new ImageIcon("D:\\doananjavaky2\\img\\send_icon.png");
@@ -133,33 +141,14 @@ public class ClientChat extends JFrame implements  ActionListener {
 		Send_btn.setBounds(765, 446, 50, 50);
 		contentPane.add(Send_btn);
 		
-		
-		
-		JLabel lblNewLabel_2 = new JLabel("Room Chat");
-		lblNewLabel_2.setBounds(20, 356, 95, 14);
-		contentPane.add(lblNewLabel_2);
-		
 //		for(int i=0;i<10;i++) {
 //			
 //		}
 		String ten="Việt";
 		
-		JScrollPane scrollPane_4 = new JScrollPane();
-		scrollPane_4.setBounds(20, 373, 95, 167);
-		contentPane.add(scrollPane_4);
-		
-		JList list_room = new JList();
-		scrollPane_4.setViewportView(list_room);
-		
 		panel_contain_online_user = new JPanel(new BorderLayout());
-		panel_contain_online_user.setBounds(8, 69, 307, 261);
+		panel_contain_online_user.setBounds(8, 69, 307, 456);
 		contentPane.add(panel_contain_online_user);
-		
-		lb_avatar_nguoinhan = new JLabel("New label");
-		lb_avatar_nguoinhan.setIcon(null);
-		lb_avatar_nguoinhan.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
-		lb_avatar_nguoinhan.setBounds(380, 10, 50, 50);
-		contentPane.add(lb_avatar_nguoinhan);
 		
 		JScrollPane scrollPane_chatview = new JScrollPane();
 		scrollPane_chatview.setBounds(380, 69, 357, 261);
@@ -187,7 +176,9 @@ public class ClientChat extends JFrame implements  ActionListener {
 		});
 		Panel_ChatView.add(roomTabbedPane);
 		
-		JButton sad_btn = new JButton("");
+		 sad_btn = new JButton("");
+		 sad_btn.setEnabled(false);
+	
 		sad_btn.setIcon(new ImageIcon("D:\\doananjavaky2\\img\\emoji\\emoji_sad.png"));
 		sad_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -199,7 +190,8 @@ public class ClientChat extends JFrame implements  ActionListener {
 		sad_btn.setBounds(380, 340, 50, 50);
 		contentPane.add(sad_btn);
 		
-		JButton smile_btn = new JButton("");
+		 smile_btn = new JButton("");
+		 smile_btn.setEnabled(false);
 		smile_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				 SockerHandler.sendEmoji(chattingRoom,"smile");
@@ -209,7 +201,8 @@ public class ClientChat extends JFrame implements  ActionListener {
 		smile_btn.setBounds(441, 340, 50, 50);
 		contentPane.add(smile_btn);
 		
-		JButton nervous_btn = new JButton("");
+		 nervous_btn = new JButton("");
+		 nervous_btn.setEnabled(false);
 		nervous_btn.setIcon(new ImageIcon("D:\\doananjavaky2\\img\\emoji\\emoji_nervous.png"));
 		nervous_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -219,7 +212,8 @@ public class ClientChat extends JFrame implements  ActionListener {
 		nervous_btn.setBounds(501, 340, 50, 50);
 		contentPane.add(nervous_btn);
 		
-		JButton haha_btn = new JButton("");
+		 haha_btn = new JButton("");
+		 haha_btn.setEnabled(false);
 		haha_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				 SockerHandler.sendEmoji(chattingRoom,"haha");
@@ -238,16 +232,49 @@ public class ClientChat extends JFrame implements  ActionListener {
 		textArea_message = new JTextArea();
 		scrollPane.setViewportView(textArea_message);
 		
-		JButton file_btn = new JButton("File");
+		 file_btn = new JButton("File");
+		 file_btn.setEnabled(false);
 		file_btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if (chattingRoom != -1)
+				{
+					JFileChooser jfc = new JFileChooser();
+					jfc.setDialogTitle("Chọn file để gửi");
+					int result = jfc.showDialog(null, "Chọn file");
+					jfc.setVisible(true);
+
+					if (result == JFileChooser.APPROVE_OPTION) {
+						String fileName = jfc.getSelectedFile().getName();
+						String filePath = jfc.getSelectedFile().getAbsolutePath();
+
+						SockerHandler.sendFileToRoom(chattingRoom, fileName, filePath);
+					}
+				}
+				
 				
 			}
 		});
-		file_btn.setBounds(621, 345, 50, 37);
+		file_btn.setBounds(621, 340, 58, 50);
 		contentPane.add(file_btn);
 		
-		JButton voice_btn = new JButton("VoiceCall");
+		 voice_btn = new JButton("VoiceCall");
+		voice_btn.setEnabled(false);
+	
+		voice_btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+					String ReceiverPeople="";
+					Room room=Room.findRoom(SockerHandler.allRooms, chattingRoom);
+					for (String user : room.getUser()) {
+						if(!user.equals(SockerHandler.getUserName())) {
+							ReceiverPeople=user;
+						}
+					}
+				
+				
+				SockerHandler.VoiceChat(chattingRoom);
+			}
+		});
 		voice_btn.setBounds(747, 176, 79, 56);
 		contentPane.add(voice_btn);
 		
@@ -365,7 +392,13 @@ public class ClientChat extends JFrame implements  ActionListener {
 	}
 	
 	public void newRoomTab(Room room) {
-		System.out.println("loi doan nay");
+		sad_btn.setEnabled(true);
+        haha_btn.setEnabled(true);
+        Send_btn.setEnabled(true);
+        nervous_btn.setEnabled(true);
+        smile_btn.setEnabled(true);
+        voice_btn.setEnabled(true);
+        file_btn.setEnabled(true);
 		RoomMessagesPanel roomMessagesPanel = new RoomMessagesPanel(room);
 		roomMessagesPanels.add(roomMessagesPanel);
 
@@ -385,6 +418,7 @@ public class ClientChat extends JFrame implements  ActionListener {
 						roomTabbedPane.remove(messagesScrollPane);
 					}
 				}));
+		
 	}
 
 
@@ -444,13 +478,21 @@ public class ClientChat extends JFrame implements  ActionListener {
 		    public void mouseClicked(MouseEvent e) {
 		        if (e.getClickCount() == 2) { // Kiểm tra số lần click (ở đây là 1 click)
 		            int selectedIndex = list2.getSelectedIndex(); // Lấy chỉ số của item được chọn
+		            sad_btn.setEnabled(true);
+		            haha_btn.setEnabled(true);
+		            Send_btn.setEnabled(true);
+		            nervous_btn.setEnabled(true);
+		            smile_btn.setEnabled(true);
+		            voice_btn.setEnabled(true);
+		            file_btn.setEnabled(true);
+
 		            Account_Client_side selectedAccount = list2.getSelectedValue(); // Lấy giá trị của item được chọn
 		            // Xử lý sự kiện khi item được chọn
 		            JOptionPane.showMessageDialog(null,"Da click"+selectedAccount);
 		            ImageIcon image=new ImageIcon(selectedAccount.Avatar);
 		    		Image ChangeImg=image.getImage().getScaledInstance(100, 100, Image.SCALE_DEFAULT);
 		    		Icon icon=new ImageIcon(ChangeImg);
-		            lb_avatar_nguoinhan.setIcon(icon);
+		    		
 		            Room foundRoom = Room.findPrivateRoom(SockerHandler.allRooms, selectedAccount.userName);
 		            if(foundRoom==null) {
 		            	SockerHandler.CreatePrivateRoom(selectedAccount.getUserName());
@@ -566,5 +608,13 @@ public class ClientChat extends JFrame implements  ActionListener {
 		
 		
 
+	}
+	public static void deleteUserOnlinePanel_members(String username) {
+		for (Account_Client_side account_Client_side : UserOnlinePanel_members) {
+			if(username.equals(account_Client_side.getUserName())) {
+				UserOnlinePanel_members.remove(account_Client_side);
+				break;
+			}
+		}
 	}
 }

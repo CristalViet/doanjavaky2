@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,7 +30,7 @@ public class SockerHandler extends Thread {
 	
 	public static  String userName;
 	public String password;
-	public Socket Server;
+	public static Socket Server;
 	public static BufferedWriter sender;
 	public BufferedReader receiver;
 	public String avatarLink;
@@ -40,6 +41,10 @@ public class SockerHandler extends Thread {
 	static ArrayList<Account_Client_side>clientAccountList=new ArrayList<>();
 	public static List<Room>  allRooms=new ArrayList<>();
 	public List<String>listIDphong=new ArrayList<>();
+	public static int portVoice=1000;
+	public static CallFrame2 callFrame2;
+	public static   CallFrame callframe;
+	public static CallWait callwait;
 	public SockerHandler(String userName, String password, int port) throws IOException {
 		super();
 		Server = new Socket("localhost", port);
@@ -74,9 +79,9 @@ public class SockerHandler extends Thread {
 			{
 				sender.write("new login");
 				sender.newLine();
-				sender.write(ac.userName);
+				sender.write(ac.userName+"");
 				sender.newLine();
-				sender.write(password);
+				sender.write(password+"");
 				sender.newLine();
 				System.out.println("Link avatar:"+ac.Avatar);
 				sender.write(ac.Avatar+"");
@@ -98,6 +103,9 @@ public class SockerHandler extends Thread {
 				 if(Result.equals("login success")) {
 					 receiveAndProcessThread=new Thread(()->{
 						  ClientChat clientChat=new ClientChat(userName,sender);
+						  callframe=new CallFrame();
+						   callwait=new CallWait();
+						  callFrame2=new CallFrame2();
 						  while (true) {
 							  try {
 								String header = receiver.readLine();
@@ -198,7 +206,10 @@ public class SockerHandler extends Thread {
 									break;
 								}
 								case "user quit":{
-									
+									String username=receiver.readLine();
+									clientChat.deleteUserOnlinePanel_members(username);
+									ClientChat.UpdateOnlineUserList();
+									clientChat.reloadUI_online();
 									break;
 								}
 								case "text from user to room":{
@@ -214,6 +225,14 @@ public class SockerHandler extends Thread {
 									ClientChat.addNewMessage(roomID, "text", user, content);
 									break;
 								}
+								case "file from user to room": {
+									String user = receiver.readLine();
+									int roomID = Integer.parseInt(receiver.readLine());
+									String fileName = receiver.readLine();
+									System.out.println("Recevie file " + fileName + " from " + user + " to room " + roomID);
+									ClientChat.addNewMessage(roomID, "file", user, fileName);
+									break;
+								}
 								case "emoji from user to room":{
 									String user = receiver.readLine();
 									System.out.println("nguoi gui emoji"+user);
@@ -222,20 +241,97 @@ public class SockerHandler extends Thread {
 									ClientChat.addNewMessage(roomID, "emoji", user, nameEmoji);
 									break;
 								}
+								case "response download file":{
+									int fileSize = Integer.parseInt(receiver.readLine());
+									File file = new File(downloadToPath);
+									byte[] buffer = new byte[1024];
+									InputStream in = Server.getInputStream();
+									OutputStream out = new FileOutputStream(file);
+
+									int count;
+									int receivedFileSize = 0;
+									while ((count = in.read(buffer)) > 0) {
+										out.write(buffer, 0, count);
+										receivedFileSize += count;
+										if (receivedFileSize >= fileSize)
+											break;
+									}
+
+									out.close();
+									break;
+								}
+								case"return generate port"  :{
+									portVoice=Integer.parseInt(receiver.readLine());
+									
+									break;
+								}
+								case"user deny call"  :{
+									callframe.lb_des.setText("Người dùng từ chối cuộc gọi");
+									try {
+										Thread.sleep(1000);
+									} catch (InterruptedException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+									callframe.dispose();
+									
+									break;
+								}
+								case "accept voice":{
+									callframe.lb_des.setText("Đã kết nối");
+									break;
+								}
+								case"voice from user to room"  :{
+									String WhoSend=receiver.readLine();
+									int idroom=Integer.parseInt(receiver.readLine());
+									
+									portVoice=Integer.parseInt(receiver.readLine());
+									
+									System.out.println("request make voice "+" from " + WhoSend + " to room " + idroom);
+									ClientChat.addNewMessage(idroom, "voice", WhoSend, portVoice+"");
+									
+									Room room=Room.findRoom(allRooms, idroom);
+									String userName_receive = null;
+									String trangthaigoi="Đang gọi";
+									if(WhoSend.equals(userName)) {
+										for (String user : room.getUser()) {
+											if(!user.equals(WhoSend))
+											{
+												userName_receive=user;
+												break;
+											}
+										}
+									 	 callframe= new CallFrame(idroom, portVoice, userName_receive,trangthaigoi,sender);
+										
+									}
+									else {
+										
+										callwait=new CallWait(idroom,portVoice,WhoSend,sender);
+									}
+									break;
+								}
+								
+								case"end call"  :{
+									callframe.dispose();
+									callFrame2.dispose();
+								
+									break;
+								}
 								
 							}
 								
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
-								try {
-									sender.write("user exit");
-									sender.newLine();
-									sender.flush();
-								} catch (IOException e1) {
-									// TODO Auto-generated catch block
-									e1.printStackTrace();
-								}
+								System.out.println(e);
+//								try {
+//									sender.write("user exit");
+//									sender.newLine();
+//									sender.flush();
+//								} catch (IOException e1) {
+//									// TODO Auto-generated catch block
+//									e1.printStackTrace();
+//								}
 							
 							
 							}
@@ -263,9 +359,9 @@ public class SockerHandler extends Thread {
 			sender.newLine();
 			sender.write(password);
 			sender.newLine();
-			sender.write(avatarLink);
+			sender.write(avatarLink+"");
 			sender.newLine();
-			sender.write(description);
+			sender.write(description+"");
 			sender.newLine();
 			sender.flush();
 			System.out.println("gui ch");
@@ -331,6 +427,31 @@ public class SockerHandler extends Thread {
 			}
 		
 	}
+	public static void GetGeneratePort() {
+		try {
+			sender.write("get generate port");
+			sender.newLine();
+			sender.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	public static void VoiceChat(int idroom) {
+		try {
+			sender.write("voice chat");
+			sender.newLine();
+			sender.write(idroom+"");
+			sender.newLine();
+			sender.write(portVoice+"");
+			sender.newLine();
+			sender.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	public static void sendFileToRoom(int idroom,String fileName,String filePath) {
 		try {
 			System.out.println("Send file " + fileName + " to room " + idroom);
@@ -340,6 +461,8 @@ public class SockerHandler extends Thread {
 			sender.newLine();
 			sender.write(idroom+"");
 			sender.newLine();
+			sender.write("" + room.getListMessage().size());
+			sender.newLine();
 			sender.write(fileName);
 			sender.newLine();
 			sender.write("" + file.length());
@@ -347,7 +470,7 @@ public class SockerHandler extends Thread {
 			sender.flush();
 			byte[] buffer = new byte[1024];
 			InputStream in = new FileInputStream(file);
-			OutputStream out = os;
+			OutputStream out = Server.getOutputStream();
 
 			int count;
 			while ((count = in.read(buffer)) > 0) {
@@ -359,6 +482,25 @@ public class SockerHandler extends Thread {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.out.println("Loi exception ne");
+		}
+	}
+	public static String downloadToPath;
+
+	public static void  downloadFile(int idroom,int messageIndex, String fileName, String filepath) {
+		downloadToPath = filepath;
+		try {
+			sender.write("request download file");
+			sender.newLine();
+			sender.write("" + idroom);
+			sender.newLine();
+			sender.write("" + messageIndex);
+			sender.newLine();
+			sender.write(fileName);
+			sender.newLine();
+			sender.flush();
+		} catch (IOException ex) {
+			ex.printStackTrace();
 		}
 	}
 	public static void  sendEmoji(int idroom,String tenEmoji) {
